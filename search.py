@@ -15,19 +15,18 @@ class BreadthFirstSearchVisualization:
         self.start = None
         self.goal = None
 
-        # Initialize Pygame
         pygame.init()
 
-        # Set up the display
+        # Display
         self.screen_width = len(maze[0]) * 30
         self.screen_height = len(maze) * 30
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Pacman Search Visualization")
 
-        # Clock for controlling the frame rate
+        # Fame rate
         self.clock = pygame.time.Clock()
 
-        # Load images
+        # Drav wall
         self.wall_img = pygame.Surface((30, 30))
         self.wall_img.fill(BLUE)
 
@@ -63,13 +62,14 @@ class BreadthFirstSearchVisualization:
                 if next_node not in visited:
                     frontier.append(next_node)
                     came_from[next_node] = current
-                    visited.add(next_node)
-                    self.draw_maze()
-                    self.draw_food(goal)
-                    self.draw_pacman(current)
-                    pygame.display.update()
 
         path = self.reconstruct_path(came_from, start, goal)
+        for position in path:
+            self.draw_maze()
+            self.draw_food(goal)
+            self.draw_pacman(position)
+            pygame.display.update()
+            pygame.time.delay(200)  # Delay animation
         return path
 
     def get_neighbors(self, node):
@@ -104,19 +104,21 @@ class BreadthFirstSearchVisualization:
 
 # Example usage:
 maze = [
-    "##########",
-    "#        #",
-    "#  P#    #",
-    "#   #    #",
-    "#   ###  #",
-    "#      # #",
-    "#   #    #",
-    "##########"
+    "####   ### ###",
+    "#    #       #",
+    "####P#       #",
+    "#   #        #",
+    "#   ###      #",
+    "#             ",
+    "#             ",
+    "#      #     #",
+    "#   #        #",
+    "##############"
 ]
 
-start = (1, 2)  # Pacman's initial position
-goal = (5, 6)   # Position of the food (F)
+start = (2, 4)  # Pacman
+goal = [(5, 6), (8, 8)]   # Position of food
 
 search = BreadthFirstSearchVisualization(maze)
-path = search.find_food(start, goal)
+path = search.find_food(start, goal[1])
 search.run_visualization()
