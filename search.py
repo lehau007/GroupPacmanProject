@@ -300,20 +300,20 @@ class AStarSearchVisualization:
 # Example usage:
 maze = [
     "####   ### ###",
-    "#    #       #",
-    "####P#       #",
-    "#   #        #",
-    "#   ###      #",
-    "#             ",
-    "#             ",
+    "#    # #     #",
+    "####P# #     #",
+    "#   #   #    #",
+    "#   ### #    #",
+    "#        #    ",
+    "#   ### #     ",
     "#      #     #",
-    "#   #        #",
+    "#   ##  F    #",
     "##############"
 ]
 
 start = (2, 4)  # Pacman
 goal = [(5, 6), (8, 8)]   # Position of food
 
-search = AStarSearchVisualization(maze)
+search = BreadthFirstSearchVisualization(maze)
 path = search.find_food(start, goal[1])
 search.run_visualization()
