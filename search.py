@@ -95,7 +95,7 @@ class BreadthFirstSearchVisualization:
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    running = True
 
             pygame.display.flip()
             self.clock.tick(60)
@@ -300,19 +300,19 @@ class AStarSearchVisualization:
 # Example usage:
 maze = [
     "####   ### ###",
-    "#    # #     #",
+    "#    # #F    #",
     "####P# #     #",
     "#   #   #    #",
     "#   ### #    #",
     "#        #    ",
     "#   ### #     ",
     "#      #     #",
-    "#   ##  F    #",
+    "#   ##       #",
     "##############"
 ]
 
 start = (2, 4)  # Pacman
-goal = [(5, 6), (8, 8)]   # Position of food
+goal = [(5, 6), (1, 8)]   # Position of food
 
 search = BreadthFirstSearchVisualization(maze)
 path = search.find_food(start, goal[1])
