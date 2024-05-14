@@ -661,11 +661,11 @@ class Ghost:
 
 def draw_misc():
     score_text = font.render(f'Score: {score}', True, 'white')
-    screen.blit(score_text, (10, 920))
+    screen.blit(score_text, (50, 500))
     if powerup:
-        pygame.draw.circle(screen, 'blue', (140, 930), 15)
+        pygame.draw.circle(screen, 'blue', (140, 430), 15)
     for i in range(lives):
-        screen.blit(pygame.transform.scale(player_images[0], (30, 30)), (650 + i * 40, 915))
+        screen.blit(pygame.transform.scale(player_images[0], (30, 30)), (50 + i * 40, 330))
     if game_over:
         pygame.draw.rect(screen, 'white', [50, 200, 800, 300], 0, 10)
         pygame.draw.rect(screen, 'dark gray', [70, 220, 760, 260], 0, 10)

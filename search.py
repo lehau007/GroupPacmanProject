@@ -65,6 +65,7 @@ class BreadthFirstSearchVisualization:
 
         path = self.reconstruct_path(came_from, start, goal)
         for position in path:
+            print(path[0][0])
             self.draw_maze()
             self.draw_food(goal)
             self.draw_pacman(position)

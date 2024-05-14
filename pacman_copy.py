@@ -1,4 +1,5 @@
 # Build Pac-Man from Scratch in Python with PyGame!!
+from collections import deque
 import copy
 from board import boards
 import pygame
@@ -16,7 +17,7 @@ level = copy.deepcopy(boards)
 color = 'blue'
 PI = math.pi
 player_images = []
-for i in range(1, 5):
+for i in range(0, 5):
     player_images.append(pygame.transform.scale(pygame.image.load(f'assets/player_images/{i}.png'), (45, 45)))
 blinky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/red.png'), (45, 45))
 pinky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/pink.png'), (45, 45))
@@ -26,6 +27,7 @@ spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/pow
 dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (45, 45))
 player_x = 450
 player_y = 663
+#num1 = 28, num2 = 30
 direction = 0
 blinky_x = 56
 blinky_y = 58
@@ -39,8 +41,11 @@ pinky_direction = 2
 clyde_x = 440
 clyde_y = 438
 clyde_direction = 2
-counter = 0
+counter = 5
 flicker = False
+find = True
+ways = []
+d = 0
 # R, L, U, D
 turns_allowed = [False, False, False, False]
 direction_command = 0
@@ -94,6 +99,7 @@ class Ghost:
 
     def check_collisions(self):
         # R, L, U, D
+        #num1 = 28, num2 = 30
         num1 = ((HEIGHT - 50) // 32)
         num2 = (WIDTH // 30)
         num3 = 15
@@ -661,11 +667,11 @@ class Ghost:
 
 def draw_misc():
     score_text = font.render(f'Score: {score}', True, 'white')
-    screen.blit(score_text, (10, 920))
+    screen.blit(score_text, (50, 500))
     if powerup:
         pygame.draw.circle(screen, 'blue', (140, 930), 15)
     for i in range(lives):
-        screen.blit(pygame.transform.scale(player_images[0], (30, 30)), (650 + i * 40, 915))
+        screen.blit(pygame.transform.scale(player_images[0], (30, 30)), (50 + i * 40, 330))
     if game_over:
         pygame.draw.rect(screen, 'white', [50, 200, 800, 300], 0, 10)
         pygame.draw.rect(screen, 'dark gray', [70, 220, 760, 260], 0, 10)
@@ -774,12 +780,21 @@ def draw_board():
                                  (j * num2 + num2, i * num1 + (0.5 * num1)), 3)
                 
 class Player:
-    def __init__(self, x_coord, y_coord, speed, direct, turn):
+    def __init__(self, x_coord, y_coord, speed, direct, turn, level_coord, find_coord, ways_coord, d):
+        self.num1 = (HEIGHT - 50) // 32
+        self.num2 = WIDTH // 30
+        self.num3 = 15
         self.x_pos = x_coord
         self.y_pos = y_coord
+        self.x = x_coord + 24
+        self.y = y_coord + 23
         self.speed = speed
         self.direction = direct
         self.turns_allowed = turn
+        self.maze = level_coord
+        self.find = find_coord
+        self.ways = ways_coord
+        self.i = d
         self.rect = self.draw_player()
 
     def draw_player(self):
@@ -794,9 +809,77 @@ class Player:
             screen.blit(pygame.transform.rotate(player_images[counter // 5], 270), (player_x, player_y))
 
     def move_player(self):
-        if self.direction == 0 and self.turns_allowed[0]:
-            self.x_pos += self.speed
-        return self.x_pos, self.y_pos, self.direction
+        if self.find == True:
+            self.ways = self.find_food((16, 7))
+            for position in self.ways:
+                print(position)
+            self.i = 0
+            self.find = False
+        else:
+            if(self.i < len(self.ways)):
+                if self.ways[self.i] == (16, 7):
+                    self.find = False
+                else:
+                    if self.x == ways[self.i][1]*self.num2 or self.y == ways[self.i][0]*self.num1:
+                        self.i = self.i+1
+                    if(self.i < len(self.ways) - 1):
+                        if self.ways[self.i+1][1] - self.ways[self.i][1] == 1:
+                            self.x_pos += self.speed
+                            self.direction = 0
+                        elif self.ways[self.i+1][1] - self.ways[self.i][1] == -1:
+                            self.x_pos -= self.speed
+                            self.direction = 1
+                        elif self.ways[self.i+1][0] - self.ways[self.i][0] == -1:
+                            self.y_pos -= self.speed
+                            self.direction = 2
+                        elif self.ways[self.i+1][0] - self.ways[self.i][0] == 1:
+                            self.y_pos += self.speed
+                            self.direction = 3
+
+        return self.x_pos, self.y_pos, self.direction, self.find, self.ways, self.i
+    
+    def find_food(self, goal):
+        start = (24, 14)
+        frontier = deque([start])
+        visited = set()
+        came_from = {}
+
+        while frontier:
+            current = frontier.popleft()
+            visited.add(current)
+
+            if current == goal:
+                break
+
+            for next_node in self.get_neighbors(current):
+                if next_node not in visited:
+                    frontier.append(next_node)
+                    came_from[next_node] = current
+
+        path = self.reconstruct_path(came_from, start, goal)
+        return path
+
+    def get_neighbors(self, node):
+        neighbors = []
+        direcc = 0
+        x, y = node
+        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            new_x, new_y = x + dx, y + dy
+            if 0 <= new_x < len(self.maze) and 0 <= new_y < len(self.maze[0]) and self.maze[new_x][new_y] < 3:
+                neighbors.append((new_x, new_y))
+            direcc = direcc + 1
+        return neighbors
+
+    def reconstruct_path(self, came_from, start, goal):
+        current = goal
+        path = []
+        while current != start:
+            path.append(current)
+            current = came_from[current]
+        path.append(start)
+        path.reverse()
+        return path
+
 
 
 
@@ -887,7 +970,7 @@ while run:
         if counter > 3:
             flicker = False
     else:
-        counter = 0
+        counter = 5
         flicker = True
     if powerup and power_counter < 600:
         power_counter += 1
@@ -935,7 +1018,7 @@ while run:
 
     turns_allowed = check_position(center_x, center_y)
 
-    player = Player(player_x, player_y, player_speed, direction, turns_allowed)
+    player = Player(player_x, player_y, player_speed, direction, turns_allowed, level, find, ways, d)
 
     blinky = Ghost(blinky_x, blinky_y, targets[0], ghost_speeds[0], blinky_img, blinky_direction, blinky_dead,
                    blinky_box, 0)
@@ -945,11 +1028,10 @@ while run:
                   pinky_box, 2)
     clyde = Ghost(clyde_x, clyde_y, targets[3], ghost_speeds[3], clyde_img, clyde_direction, clyde_dead,
                   clyde_box, 3)
-    draw_misc()
     targets = get_targets(blinky_x, blinky_y, inky_x, inky_y, pinky_x, pinky_y, clyde_x, clyde_y)
 
     if moving:
-        player_x, player_y, direction = player.move_player()
+        player_x, player_y, direction, find, ways, d = player.move_player()
         if not blinky_dead and not blinky.in_box:
             blinky_x, blinky_y, blinky_direction = blinky.move_blinky()
         else:
@@ -1190,6 +1272,8 @@ while run:
         pinky_dead = False
     if clyde.in_box and clyde_dead:
         clyde_dead = False
+
+    draw_misc()
 
     pygame.display.flip()
 pygame.quit()
