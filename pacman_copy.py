@@ -7,6 +7,9 @@ import math
 
 pygame.init()
 
+were_eat = 1
+aims_food = [(24, 14), (30, 4), (2, 27), (4, 2), (27, 24)]
+
 WIDTH = 900
 HEIGHT = 950 
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
@@ -26,7 +29,7 @@ clyde_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orang
 spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/powerup.png'), (45, 45))
 dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (45, 45))
 player_x = 450
-player_y = 662
+player_y = 663
 #num1 = 28, num2 = 30
 direction = 0
 blinky_x = 56
@@ -703,6 +706,9 @@ def check_position(centerx, centery):
     num1 = (HEIGHT - 50) // 32
     num2 = (WIDTH // 30)
     num3 = 15
+    #num1 = 28, num2 = 30
+    # centerx = 473
+    # centery = 686
     # check collisions based on center x and center y of player +/- fudge number
     if centerx // 30 < 29:
         if direction == 0:
@@ -780,14 +786,14 @@ def draw_board():
                                  (j * num2 + num2, i * num1 + (0.5 * num1)), 3)
                 
 class Player:
-    def __init__(self, x_coord, y_coord, speed, direct, turn, level_coord, find_coord, ways_coord, d):
+    def __init__(self, x_coord, y_coord, speed, direct, turn, level_coord, find_coord, ways_coord, d, eat_recod):
         self.num1 = (HEIGHT - 50) // 32
         self.num2 = WIDTH // 30
         self.num3 = 15
         self.x_pos = x_coord
         self.y_pos = y_coord
-        self.x = x_coord + 24
-        self.y = y_coord + 23
+        self.x = x_coord + 23
+        self.y = y_coord + 24
         self.speed = speed
         self.direction = direct
         self.turns_allowed = turn
@@ -795,6 +801,7 @@ class Player:
         self.find = find_coord
         self.ways = ways_coord
         self.i = d
+        self.eat = eat_recod 
         self.rect = self.draw_player()
 
     def draw_player(self):
@@ -808,18 +815,20 @@ class Player:
         elif self.direction == 3:
             screen.blit(pygame.transform.rotate(player_images[counter // 5], 270), (player_x, player_y))
 
-    def move_player(self):
+    def move_player(self, start, aims):
         # 0-RIGHT, 1-LEFT, 2-UP, 3-DOWN
         if self.find == True:
-            self.ways = self.find_food((30, 4))
+            self.ways = self.find_food(start, aims)
             for position in self.ways:
                 print(position)
-            self.i = 0
             self.find = False
         else:
             if(self.i < len(self.ways)):
-                if self.ways[self.i] == (30, 4):
-                    self.find = False
+                if self.ways[self.i] == aims:
+                    self.i = 0
+                    self.eat = self.eat + 1
+                    print()
+                    self.find = True
                 else:
                     if(self.i < len(self.ways) - 1):
                         if self.ways[self.i+1][1] - self.ways[self.i][1] == 1:
@@ -844,10 +853,9 @@ class Player:
                     elif self.direction == 3 and self.y - ways[self.i][0]*self.num1 >= 40:
                             self.i = self.i+1
 
-        return self.x_pos, self.y_pos, self.direction, self.find, self.ways, self.i
+        return self.x_pos, self.y_pos, self.direction, self.find, self.ways, self.i, self.eat
     
-    def find_food(self, goal):
-        start = (24, 14)
+    def find_food(self, start, goal):
         frontier = deque([start])
         visited = set()
         came_from = {}
@@ -887,6 +895,9 @@ class Player:
         path.append(start)
         path.reverse()
         return path
+    # def next_foof(self):
+    #     das = 0
+
 
 
 
@@ -1026,7 +1037,7 @@ while run:
 
     turns_allowed = check_position(center_x, center_y)
 
-    player = Player(player_x, player_y, player_speed, direction, turns_allowed, level, find, ways, d)
+    player = Player(player_x, player_y, player_speed, direction, turns_allowed, level, find, ways, d, were_eat)
 
     blinky = Ghost(blinky_x, blinky_y, targets[0], ghost_speeds[0], blinky_img, blinky_direction, blinky_dead,
                    blinky_box, 0)
@@ -1039,7 +1050,9 @@ while run:
     targets = get_targets(blinky_x, blinky_y, inky_x, inky_y, pinky_x, pinky_y, clyde_x, clyde_y)
 
     if moving:
-        player_x, player_y, direction, find, ways, d = player.move_player()
+        if were_eat < len(aims_food):
+            player_x, player_y, direction, find, ways, d, were_eat = player.move_player(aims_food[were_eat-1], aims_food[were_eat])
+
         if not blinky_dead and not blinky.in_box:
             blinky_x, blinky_y, blinky_direction = blinky.move_blinky()
         else:
