@@ -26,7 +26,7 @@ clyde_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orang
 spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/powerup.png'), (45, 45))
 dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (45, 45))
 player_x = 450
-player_y = 663
+player_y = 662
 #num1 = 28, num2 = 30
 direction = 0
 blinky_x = 56
@@ -809,19 +809,18 @@ class Player:
             screen.blit(pygame.transform.rotate(player_images[counter // 5], 270), (player_x, player_y))
 
     def move_player(self):
+        # 0-RIGHT, 1-LEFT, 2-UP, 3-DOWN
         if self.find == True:
-            self.ways = self.find_food((16, 7))
+            self.ways = self.find_food((30, 4))
             for position in self.ways:
                 print(position)
             self.i = 0
             self.find = False
         else:
             if(self.i < len(self.ways)):
-                if self.ways[self.i] == (16, 7):
+                if self.ways[self.i] == (30, 4):
                     self.find = False
                 else:
-                    if self.x == ways[self.i][1]*self.num2 or self.y == ways[self.i][0]*self.num1:
-                        self.i = self.i+1
                     if(self.i < len(self.ways) - 1):
                         if self.ways[self.i+1][1] - self.ways[self.i][1] == 1:
                             self.x_pos += self.speed
@@ -835,6 +834,15 @@ class Player:
                         elif self.ways[self.i+1][0] - self.ways[self.i][0] == 1:
                             self.y_pos += self.speed
                             self.direction = 3
+                            
+                    if self.direction == 0 and self.x - ways[self.i][1]*self.num2 >= 45:
+                            self.i = self.i+1
+                    elif self.direction == 1 and self.x - ways[self.i][1]*self.num2 <= -10:
+                            self.i = self.i+1
+                    elif self.direction == 2 and self.y - ways[self.i][0]*self.num1 <= -10:
+                            self.i = self.i+1
+                    elif self.direction == 3 and self.y - ways[self.i][0]*self.num1 >= 40:
+                            self.i = self.i+1
 
         return self.x_pos, self.y_pos, self.direction, self.find, self.ways, self.i
     
@@ -1047,6 +1055,7 @@ while run:
         clyde_x, clyde_y, clyde_direction = clyde.move_clyde()
     score, powerup, power_counter, eaten_ghost = check_collisions(score, powerup, power_counter, eaten_ghost)
     # add to if not powerup to check if eaten ghosts
+    powerup = True
     if not powerup:
         if (player_circle.colliderect(blinky.rect) and not blinky.dead) or \
                 (player_circle.colliderect(inky.rect) and not inky.dead) or \
