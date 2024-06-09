@@ -10,7 +10,7 @@ WIDTH = 900
 HEIGHT = 950 
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
 timer = pygame.time.Clock()
-fps = 30
+fps = 120
 font = pygame.font.Font('freesansbold.ttf', 20)
 level = copy.deepcopy(boards)
 color = 'blue'
@@ -110,12 +110,10 @@ class Ghost:
                     self.in_box or self.dead)):
                 self.turns[0] = True
             if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
-                    or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (
-                    self.in_box or self.dead)):
+                    or self.in_box or self.dead:
                 self.turns[3] = True
             if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
-                    or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (
-                    self.in_box or self.dead)):
+                    or self.in_box or self.dead:
                 self.turns[2] = True
 
             if self.direction == 2 or self.direction == 3:

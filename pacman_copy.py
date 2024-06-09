@@ -7,14 +7,13 @@ import math
 
 pygame.init()
 
-were_eat = 1
-aims_food = [(24, 14), (30, 4), (2, 27), (4, 2), (27, 24)]
+aims_food = (24, 15)
 
 WIDTH = 900
 HEIGHT = 950 
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
 timer = pygame.time.Clock()
-fps = 30
+fps = 120
 font = pygame.font.Font('freesansbold.ttf', 20)
 level = copy.deepcopy(boards)
 color = 'blue'
@@ -28,6 +27,8 @@ inky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/blue.p
 clyde_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orange.png'), (45, 45))
 spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/powerup.png'), (45, 45))
 dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (45, 45))
+num1 = ((HEIGHT - 50) // 32)
+num2 = (WIDTH // 30)
 player_x = 450
 player_y = 663
 #num1 = 28, num2 = 30
@@ -52,7 +53,8 @@ d = 0
 # R, L, U, D
 turns_allowed = [False, False, False, False]
 direction_command = 0
-player_speed = 2
+player_speed = 4
+player_dead = False
 score = 0
 powerup = False
 power_counter = 0
@@ -71,9 +73,7 @@ ghost_speeds = [2, 2, 2, 2]
 startup_counter = 0
 lives = 3
 game_over = False
-game_won = False
-
-
+game_won = False            
 class Ghost:
     def __init__(self, x_coord, y_coord, target, speed, img, direct, dead, box, id):
         self.x_pos = x_coord
@@ -103,8 +103,6 @@ class Ghost:
     def check_collisions(self):
         # R, L, U, D
         #num1 = 28, num2 = 30
-        num1 = ((HEIGHT - 50) // 32)
-        num2 = (WIDTH // 30)
         num3 = 15
         self.turns = [False, False, False, False]
         if 0 < self.center_x // 30 < 29:
@@ -687,8 +685,6 @@ def draw_misc():
         screen.blit(gameover_text, (100, 300))
 
 def check_collisions(scor, power, power_count, eaten_ghosts):
-    num1 = (HEIGHT - 50) // 32
-    num2 = WIDTH // 30
     if 0 < player_x < 870:
         if level[center_y // num1][center_x // num2] == 1:
             level[center_y // num1][center_x // num2] = 0
@@ -703,8 +699,6 @@ def check_collisions(scor, power, power_count, eaten_ghosts):
 
 def check_position(centerx, centery):
     turns = [False, False, False, False]
-    num1 = (HEIGHT - 50) // 32
-    num2 = (WIDTH // 30)
     num3 = 15
     #num1 = 28, num2 = 30
     # centerx = 473
@@ -754,8 +748,6 @@ def check_position(centerx, centery):
 
 
 def draw_board():
-    num1 = ((HEIGHT - 50) // 32)
-    num2 = (WIDTH // 30)
     for i in range(len(level)):
         for j in range(len(level[i])):
             if level[i][j] == 1:
@@ -786,22 +778,43 @@ def draw_board():
                                  (j * num2 + num2, i * num1 + (0.5 * num1)), 3)
                 
 class Player:
-    def __init__(self, x_coord, y_coord, speed, direct, turn, level_coord, find_coord, ways_coord, d, eat_recod):
+    def __init__(self, x_coord, y_coord, direct, find_coord, ways_coord, d, blink_x, blink_y, blinky_dead, ink_x, ink_y, inky_dead, pink_x, pink_y, pinky_dead, clyd_x, clyd_y, clyde_dead, powerup):
         self.num1 = (HEIGHT - 50) // 32
         self.num2 = WIDTH // 30
         self.num3 = 15
         self.x_pos = x_coord
         self.y_pos = y_coord
+        self.blinky_x = (blink_x + 23) // num2
+        self.blinky_y = (blink_y + 24) // num1
+        self.inky_x = (ink_x + 23) // num2
+        self.inky_y = (ink_y + 24) // num1
+        self.pinky_x= (pink_x + 23) // num2
+        self.pinky_y = (pink_y + 24) // num1
+        self.clyde_x = (clyd_x + 23) // num2
+        self.clyde_y = (clyd_y + 24) // num1
+        self.p = powerup
         self.x = x_coord + 23
         self.y = y_coord + 24
-        self.speed = speed
         self.direction = direct
-        self.turns_allowed = turn
-        self.maze = level_coord
         self.find = find_coord
         self.ways = ways_coord
         self.i = d
-        self.eat = eat_recod 
+        min_PG = 1e9
+        self.min_gost = (-99, -99)
+        if(not powerup and not(14 <= (blink_y + 23) // num2 <= 16 and 12 <= (blink_x + 24) // num1 <= 17) and not blinky_dead and min_PG > math.sqrt((x_coord - blink_x)*(x_coord - blink_x) + (y_coord - blink_y)*(y_coord - blink_y))):
+            min_PG = math.sqrt((x_coord - blink_x)*(x_coord - blink_x) + (y_coord - blink_y)*(y_coord - blink_y))
+            self.min_gost = (blink_y, blink_x)
+        if(not powerup and not(14 <= (ink_y + 23) // num2 <= 16 and 12 <= (ink_x + 24) // num1 <= 17) and not inky_dead and min_PG > math.sqrt((x_coord - ink_x)*(x_coord - ink_x) + (y_coord - ink_y)*(y_coord - ink_y))):
+            min_PG = math.sqrt((x_coord - ink_x)*(x_coord - ink_x) + (y_coord - ink_y)*(y_coord - ink_y))
+            self.min_gost = (ink_y, ink_x)
+        if(not powerup and not(14 <= (pink_y + 23) // num2 <= 16 and 12 <= (pink_x + 24) // num1 <= 17) and not pinky_dead and min_PG > math.sqrt((x_coord - pink_x)*(x_coord - pink_x) + (y_coord - pink_y)*(y_coord - pink_y))):
+            min_PG = math.sqrt((x_coord - pink_x)*(x_coord - pink_x) + (y_coord - pink_y)*(y_coord - pink_y))
+            self.min_gost = (pink_y, pink_x)
+        if(not powerup and not(14 <= (clyd_y + 23) // num2 <= 16 and 12 <= (clyd_x + 24) // num1 <= 17) and not clyde_dead and min_PG > math.sqrt((x_coord - clyd_x)*(x_coord - clyd_x) + (y_coord - clyd_y)*(y_coord - clyd_y))):
+            min_PG = math.sqrt((x_coord - clyd_x)*(x_coord - clyd_x) + (y_coord - clyd_y)*(y_coord - clyd_y))
+            self.min_gost = (clyd_y, clyd_x)
+            
+
         self.rect = self.draw_player()
 
     def draw_player(self):
@@ -815,45 +828,46 @@ class Player:
         elif self.direction == 3:
             screen.blit(pygame.transform.rotate(player_images[counter // 5], 270), (player_x, player_y))
 
-    def move_player(self, start, aims):
+    def move_player(self, b, aims):
+        # print(aims)
         # 0-RIGHT, 1-LEFT, 2-UP, 3-DOWN
-        if self.find == True:
-            self.ways = self.find_food(start, aims)
-            for position in self.ways:
-                print(position)
-            self.find = False
+        start = self.get_position(self.y_pos, self.x_pos)
+        if self.find == True or math.sqrt((self.get_position(self.y_pos, self.x_pos)[1] - self.get_position(self.min_gost[0], self.min_gost[1])[1])*(self.get_position(self.y_pos, self.x_pos)[1] - self.get_position(self.min_gost[0], self.min_gost[1])[1]) + (self.get_position(self.y_pos, self.x_pos)[0] - self.get_position(self.min_gost[0], self.min_gost[1])[0])*(self.get_position(self.y_pos, self.x_pos)[0] - self.get_position(self.min_gost[0], self.min_gost[1])[0])) == 3.0:
+            #print("FIND")
+            aims = self.near_food(b)
+            self.i = 0
+            if(start != aims and aims != None and 0 <= aims[0] < 33 and 0 <= aims[1] < 30):
+                self.ways = self.find_food(start, aims)
+                self.find = False
         else:
             if(self.i < len(self.ways)):
                 if self.ways[self.i] == aims:
-                    self.i = 0
-                    self.eat = self.eat + 1
-                    print()
                     self.find = True
                 else:
                     if(self.i < len(self.ways) - 1):
                         if self.ways[self.i+1][1] - self.ways[self.i][1] == 1:
-                            self.x_pos += self.speed
+                            self.x_pos += player_speed
                             self.direction = 0
                         elif self.ways[self.i+1][1] - self.ways[self.i][1] == -1:
-                            self.x_pos -= self.speed
+                            self.x_pos -= player_speed
                             self.direction = 1
                         elif self.ways[self.i+1][0] - self.ways[self.i][0] == -1:
-                            self.y_pos -= self.speed
+                            self.y_pos -= player_speed
                             self.direction = 2
                         elif self.ways[self.i+1][0] - self.ways[self.i][0] == 1:
-                            self.y_pos += self.speed
+                            self.y_pos += player_speed
                             self.direction = 3
                             
                     if self.direction == 0 and self.x - ways[self.i][1]*self.num2 >= 45:
-                            self.i = self.i+1
+                        self.i = self.i+1
                     elif self.direction == 1 and self.x - ways[self.i][1]*self.num2 <= -10:
-                            self.i = self.i+1
+                        self.i = self.i+1
                     elif self.direction == 2 and self.y - ways[self.i][0]*self.num1 <= -10:
-                            self.i = self.i+1
+                        self.i = self.i+1
                     elif self.direction == 3 and self.y - ways[self.i][0]*self.num1 >= 40:
-                            self.i = self.i+1
+                        self.i = self.i+1
 
-        return self.x_pos, self.y_pos, self.direction, self.find, self.ways, self.i, self.eat
+        return self.x_pos, self.y_pos, aims,self.direction, self.find, self.ways, self.i
     
     def find_food(self, start, goal):
         frontier = deque([start])
@@ -877,13 +891,15 @@ class Player:
 
     def get_neighbors(self, node):
         neighbors = []
-        direcc = 0
         x, y = node
         for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
             new_x, new_y = x + dx, y + dy
-            if 0 <= new_x < len(self.maze) and 0 <= new_y < len(self.maze[0]) and self.maze[new_x][new_y] < 3:
-                neighbors.append((new_x, new_y))
-            direcc = direcc + 1
+            if (math.sqrt((new_x - self.blinky_x) ** 2 + (new_y - self.blinky_y) ** 2) >= 1.0) and \
+                (math.sqrt((new_x - self.pinky_x) ** 2 + (new_y - self.pinky_y) ** 2) >= 1.0) and \
+                (math.sqrt((new_x - self.inky_x) ** 2 + (new_y - self.inky_y) ** 2) >= 1.0) and \
+                (math.sqrt((new_x - self.clyde_x) ** 2 + (new_y - self.clyde_y) ** 2) >= 1.0):
+                if 0 <= new_x < len(level) and 0 <= new_y < len(level[0]) and level[new_x][new_y] < 3:
+                    neighbors.append((new_x, new_y))
         return neighbors
 
     def reconstruct_path(self, came_from, start, goal):
@@ -897,9 +913,292 @@ class Player:
         return path
     # def next_foof(self):
     #     das = 0
+    def get_position(self, y , x):
 
+        num1 = ((HEIGHT - 50) // 32)
+        num2 = (WIDTH // 30)
+        return (y+23) // num1, (x+24) // num2
+    def near_food(self, board):
+        aimsfood_x = self.x // num2
+        aimsfood_y = self.y // num1
+        blink_x = self.blinky_x
+        blink_y = self.blinky_y
+        ink_x = self.inky_x
+        ink_y = self.inky_y
+        pink_x = self.pinky_x
+        pink_y = self.pinky_y
+        clyd_x = self.clyde_x
+        clyd_y = self.clyde_y
+        powerup = self.p
+        check = [[0 for col in range(30)] for row in range(33)]
+        start = (aimsfood_y ,aimsfood_x)
+        def dfs(board, aimsfood_x , aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check):
+            if 0 < board[aimsfood_y][aimsfood_x] < 3 and aimsfood_y != start[0] and aimsfood_x != start[1]:
+                return aimsfood_y, aimsfood_x
+            check[aimsfood_y][aimsfood_x] = 1
+            min_PG = 1e9
+            if(min_PG > math.sqrt((aimsfood_x - blink_x)*(aimsfood_x - blink_x) + (aimsfood_y - blink_y)*(aimsfood_y - blink_y))):
+                min_PG = math.sqrt((aimsfood_x - blink_x)*(aimsfood_x - blink_x) + (aimsfood_y - blink_y)*(aimsfood_y - blink_y))
+                min_gost = (blink_y, blink_x)
+            if(min_PG > math.sqrt((aimsfood_x - ink_x)*(aimsfood_x - ink_x) + (aimsfood_y - ink_y)*(aimsfood_y - ink_y))):
+                min_PG = math.sqrt((aimsfood_x - ink_x)*(aimsfood_x - ink_x) + (aimsfood_y - ink_y)*(aimsfood_y - ink_y))
+                min_gost = (ink_y, ink_x)
+            if(min_PG > math.sqrt((aimsfood_x - pink_x)*(aimsfood_x - pink_x) + (aimsfood_y - pink_y)*(aimsfood_y - pink_y))):
+                min_PG = math.sqrt((aimsfood_x - pink_x)*(aimsfood_x - pink_x) + (aimsfood_y - pink_y)*(aimsfood_y - pink_y))
+                min_gost = (pink_y, pink_x)
+            if(min_PG > math.sqrt((aimsfood_x - clyd_x)*(aimsfood_x - clyd_x) + (aimsfood_y - clyd_y)*(aimsfood_y - clyd_y))):
+                min_PG = math.sqrt((aimsfood_x - clyd_x)*(aimsfood_x - clyd_x) + (aimsfood_y - clyd_y)*(aimsfood_y - clyd_y))
+                min_gost = (clyd_y, clyd_x)
+                
+            if min_gost[0] - aimsfood_y <= 0:
+                if(min_gost[1] - aimsfood_x >= 0):
+                    # print(min_gost)
+                    # print("DL")
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                else:
+                    # print(min_gost)
+                    # print("DR")
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                    
+            if min_gost[0] - aimsfood_y >= 0:
+                if(min_gost[1] - aimsfood_x >= 0):
+                    # print(min_gost)
+                    # print("UL")
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+                else:
+                    # print(min_gost)
+                    # print("UR")
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+            if min_gost[1] - aimsfood_x >= 0:
+                if(min_gost[0] - aimsfood_y <= 0):
+                    # print(min_gost)
+                    # print("LD")
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+                else:
+                    # print(min_gost)
+                    # print("LU")
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+            if min_gost[1] - aimsfood_x <= 0:
+                if(min_gost[0] - aimsfood_y <= 0):
+                    # print(min_gost)
+                    # print("RD")
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+                else:
+                    # print(min_gost)
+                    # print("RU")
+                    if 0 <= aimsfood_x+1 < 30 and board[aimsfood_y][aimsfood_x+1] < 3 and check[aimsfood_y][aimsfood_x+1] == 0:
+                        temp = dfs(board, aimsfood_x+1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x+1] = 0
+                    if 0 <= aimsfood_y-1 < 33 and board[aimsfood_y-1][aimsfood_x] < 3 and check[aimsfood_y-1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y-1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y-1][aimsfood_x] = 0
+                    if 0 <= aimsfood_y+1 < 33 and board[aimsfood_y+1][aimsfood_x] < 3 and check[aimsfood_y+1][aimsfood_x] == 0:
+                        temp = dfs(board, aimsfood_x , aimsfood_y+1, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y+1][aimsfood_x] = 0
+                    if 0 <= aimsfood_x-1 < 30 and board[aimsfood_y][aimsfood_x-1] < 3 and check[aimsfood_y][aimsfood_x-1] == 0:
+                        temp = dfs(board, aimsfood_x-1, aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
+                        if(temp != None):
+                                return temp
+                        else:
+                            check[aimsfood_y][aimsfood_x-1] = 0
+            return None
+            
+        if(powerup):
+            q = deque()
+            q.append(start)
+    # R, L, U, D
+            while(True):
+                cur = q.popleft()
+                if((board[cur[0]][cur[1]] == 1 or level[cur[0]][cur[1]] == 2) and cur != start):
+                    return cur
+            
+                if(0 <= cur[0] + 1 < 33 and board[cur[0] + 1][cur[1]] < 3 and check[cur[0] + 1][cur[1]] == 0):
+                    q.append((cur[0] + 1,cur[1]))
+                    check[cur[0] + 1][cur[1]] = 1
 
+                if(0 <= cur[0] - 1 < 33 and board[cur[0] - 1][cur[1]] < 3 and check[cur[0] - 1][cur[1]] == 0):
+                    q.append((cur[0] - 1,cur[1]))
+                    check[cur[0] - 1][cur[1]] = 1
 
+                if(0 <= cur[1] + 1 < 30 and board[cur[0]][cur[1] + 1] < 3 and check[cur[0]][cur[1] + 1] == 0):
+                    q.append((cur[0],cur[1] + 1))
+                    check[cur[0]][cur[1] + 1] = 1
+
+                if(0 <= cur[1] - 1 < 30 and board[cur[0]][cur[1] - 1] < 3 and check[cur[0]][cur[1] - 1] == 0):
+                    q.append((cur[0],cur[1] - 1))
+                    check[cur[0]][cur[1] - 1] = 1
+        else:
+            return dfs(board, aimsfood_x , aimsfood_y, blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y, check)
 
 
 def get_targets(blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y):
@@ -1037,7 +1336,7 @@ while run:
 
     turns_allowed = check_position(center_x, center_y)
 
-    player = Player(player_x, player_y, player_speed, direction, turns_allowed, level, find, ways, d, were_eat)
+    player = Player(player_x, player_y, direction, find, ways, d, blinky_x, blinky_y, blinky_dead, inky_x, inky_y, inky_dead, pinky_x, pinky_y, pinky_dead, clyde_x, clyde_y, clyde_dead, powerup)
 
     blinky = Ghost(blinky_x, blinky_y, targets[0], ghost_speeds[0], blinky_img, blinky_direction, blinky_dead,
                    blinky_box, 0)
@@ -1050,9 +1349,7 @@ while run:
     targets = get_targets(blinky_x, blinky_y, inky_x, inky_y, pinky_x, pinky_y, clyde_x, clyde_y)
 
     if moving:
-        if were_eat < len(aims_food):
-            player_x, player_y, direction, find, ways, d, were_eat = player.move_player(aims_food[were_eat-1], aims_food[were_eat])
-
+        player_x, player_y, aims_food, direction, find, ways, d = player.move_player(level, aims_food)
         if not blinky_dead and not blinky.in_box:
             blinky_x, blinky_y, blinky_direction = blinky.move_blinky()
         else:
@@ -1068,19 +1365,21 @@ while run:
         clyde_x, clyde_y, clyde_direction = clyde.move_clyde()
     score, powerup, power_counter, eaten_ghost = check_collisions(score, powerup, power_counter, eaten_ghost)
     # add to if not powerup to check if eaten ghosts
-    powerup = True
     if not powerup:
         if (player_circle.colliderect(blinky.rect) and not blinky.dead) or \
                 (player_circle.colliderect(inky.rect) and not inky.dead) or \
                 (player_circle.colliderect(pinky.rect) and not pinky.dead) or \
                 (player_circle.colliderect(clyde.rect) and not clyde.dead):
             if lives > 0:
+                print("DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD_DEAD")
                 lives -= 1
                 startup_counter = 0
                 powerup = False
                 power_counter = 0
                 player_x = 450
                 player_y = 663
+                center_x = player_x + 23
+                center_y = player_y + 24
                 direction = 0
                 direction_command = 0
                 blinky_x = 56
@@ -1100,6 +1399,7 @@ while run:
                 inky_dead = False
                 clyde_dead = False
                 pinky_dead = False
+                find = True
             else:
                 game_over = True
                 moving = False

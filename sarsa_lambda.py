@@ -80,7 +80,7 @@ gamma = 0.9
 alpha = 0.2
 lamda = 0.8
 
-
+reward = -100
 arr = level
 def bfs(player_x : int,player_y : int):
    q = deque()
@@ -730,22 +730,21 @@ def draw_misc():
         screen.blit(gameover_text, (100, 300))
 
 
-def check_collisions(scor, power, power_count, eaten_ghosts):
-    global reward
+def check_collisions(scor, power, power_count, eaten_ghosts, reward):
     num1 = (HEIGHT - 50) // 32
     num2 = WIDTH // 30
     if 0 < player_x < 870:
         if level[center_y // num1][center_x // num2] == 1:
             level[center_y // num1][center_x // num2] = 0
             scor += 10
-            reward = 1
+            reward += 10
         if level[center_y // num1][center_x // num2] == 2:
             level[center_y // num1][center_x // num2] = 0
             scor += 50
             power = True
             power_count = 0
             eaten_ghosts = [False, False, False, False]
-            reward = 2
+            reward += 20
     return scor, power, power_count, eaten_ghosts,reward
 
 
@@ -792,8 +791,6 @@ def draw_player():
         screen.blit(pygame.transform.rotate(player_images[counter // 5], 90), (player_x, player_y))
     elif direction == 3:
         screen.blit(pygame.transform.rotate(player_images[counter // 5], 270), (player_x, player_y))
-
-reward = -1
 
 def check_position(centerx, centery):
     turns = [False, False, False, False]
@@ -842,23 +839,20 @@ def check_position(centerx, centery):
 
     return turns
 
-
-def move_player(play_x, play_y):
-    global reward
+def move_player(play_x, play_y, reward):
     # r, l, u, d
-    reward = -100
     if direction == 0 and turns_allowed[0]:
         play_x += player_speed
-        reward = -1
+        reward = reward - 1
     elif direction == 1 and turns_allowed[1]:
         play_x -= player_speed
-        reward = -1
+        reward = reward - 1
     if direction == 2 and turns_allowed[2]:
         play_y -= player_speed
-        reward = -1
+        reward = reward - 1
     elif direction == 3 and turns_allowed[3]:
         play_y += player_speed
-        reward = -1
+        reward = reward - 1
       
     return play_x, play_y
 
@@ -950,7 +944,6 @@ e = np.zeros((4,2,2,2,2,2,2,2,2,2,4))
 obs_state = (0,1,1,0,0,0,0,0,0,0)
 while run:
     terminated = 0
-    reward = -1
     # timer.tick(fps)
     if counter < 19:
         counter += 1
@@ -975,6 +968,9 @@ while run:
     draw_board()
     center_x = player_x + 23
     center_y = player_y + 24
+    blinky_dead = True
+    clyde_dead = True
+    inky_dead = True
     if powerup:
         ghost_speeds = [1, 1, 1, 1]
     else:
@@ -1027,7 +1023,7 @@ while run:
     if direction_command == 3 and turns_allowed[3]:
         direction = 3
     if moving:
-        player_x, player_y = move_player(player_x, player_y)
+        player_x, player_y = move_player(player_x, player_y, reward)
         if not blinky_dead and not blinky.in_box:
             blinky_x, blinky_y, blinky_direction = blinky.move_blinky()
         else:
@@ -1041,8 +1037,9 @@ while run:
         else:
             inky_x, inky_y, inky_direction = inky.move_clyde()
         clyde_x, clyde_y, clyde_direction = clyde.move_clyde()
-    score, powerup, power_counter, eaten_ghost,reward = check_collisions(score, powerup, power_counter, eaten_ghost)
+    score, powerup, power_counter, eaten_ghost,reward = check_collisions(score, powerup, power_counter, eaten_ghost, reward)
     # add to if not powerup to check if eaten ghosts
+    print(reward)
     if not powerup:
         if (player_circle.colliderect(blinky.rect) and not blinky.dead) or \
                 (player_circle.colliderect(inky.rect) and not inky.dead) or \
@@ -1277,7 +1274,7 @@ while run:
         player_x = -47
     elif player_x < -50:
         player_x = 897
-
+    
     if blinky.in_box and blinky_dead:
         blinky_dead = False
     if inky.in_box and inky_dead:
@@ -1326,15 +1323,14 @@ while run:
         count += 0.25
     if ghost_down or not next_allowed[3]:
         count += 0.25
-    print(action)
+    # print(action)
     next_state = (food_nearest,int(next_allowed[0]),int(next_allowed[1]),int(next_allowed[2]),int(next_allowed[3]),
                   ghost_right,ghost_left,ghost_up,ghost_down,int(count))
     current_q = q_table[obs_state][action]
-    max_q = np.max(q_table[obs_state])
     if (random() < epsilon):
         next_action = randint(0,3)
     else:
-        next_action = np.argmax(q_table[obs_state])
+        next_action = np.argmax(q_table[next_state])
     Temp_diff = (reward + gamma*(q_table[next_state][next_action]))
     e[obs_state][action] += 1
     q_table = q_table + np.dot(alpha*Temp_diff,e)

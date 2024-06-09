@@ -1,5 +1,6 @@
 # Build Pac-Man from Scratch in Python with PyGame!!
 import copy
+import pandas as pd
 from board import boards
 import pygame
 import math
@@ -9,17 +10,22 @@ from random import random
 from random import randint
 from collections import deque
 pygame.init()
-
+data = {
+    'score': [0],
+    'episode': [0]
+}
 WIDTH = 900 
 HEIGHT = 950 
+aism_x = 15 
+aism_y = 24
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
 timer = pygame.time.Clock()
-fps = 30
+fps = 60
 class Action(Enum):
-   RIGHT = 0;
-   LEFT = 1;
-   UP = 2;
-   DOWN = 3;
+   RIGHT = 0
+   LEFT = 1
+   UP = 2
+   DOWN = 3
 font = pygame.font.Font('freesansbold.ttf', 20)
 level = copy.deepcopy(boards)
 color = 'blue'
@@ -80,42 +86,34 @@ gamma = 0.9
 alpha = 0.001
 lamda = 0.8
 
-
-arr = level
-def bfs(player_x : int,player_y : int):
+def bfs(player_x ,player_y):
    q = deque()
    num1 = (HEIGHT - 50) // 32
    num2 = WIDTH // 30
    check = [[0 for col in range(30)] for row in range(33)]
    start = (player_y // num1 ,player_x // num2,-1)
    q.append(start)
-   while((len(q))):
-      cur = q.popleft()
-      if((arr[cur[0]][cur[1]] == 1 or arr[cur[0]][cur[1]] == 2) and cur != start):
-         return cur[2]
+   # R, L, U, D
+   while(True):
+        cur = q.popleft()
+        if((level[cur[0]][cur[1]] == 1 or level[cur[0]][cur[1]] == 2) and cur != start):
+            return cur
       
-      if(arr[cur[0] + 1][cur[1]] < 3 and check[cur[0] + 1][cur[1]] == 0):
-         q.append((cur[0] + 1,cur[1],2))
-         check[cur[0] + 1][cur[1]] = 1
+        if(level[cur[0] + 1][cur[1]] < 3 and check[cur[0] + 1][cur[1]] == 0):
+            q.append((cur[0] + 1,cur[1],3))
+            check[cur[0] + 1][cur[1]] = 1
 
-      if(arr[cur[0] - 1][cur[1]] < 3 and check[cur[0] - 1][cur[1]] == 0):
-         q.append((cur[0] - 1,cur[1],3))
-         check[cur[0] - 1][cur[1]] = 1
+        if(level[cur[0] - 1][cur[1]] < 3 and check[cur[0] - 1][cur[1]] == 0):
+            q.append((cur[0] - 1,cur[1],2))
+            check[cur[0] - 1][cur[1]] = 1
 
-      if cur[1] == 29:
-         if(arr[cur[0]][0] < 3 and check[cur[0]][0] == 0):
-            q.append((cur[0],0,0))
-            check[cur[0]][0] = 1
-      elif(arr[cur[0]][cur[1] + 1] < 3 and check[cur[0]][cur[1] + 1] == 0):
-         q.append((cur[0],cur[1] + 1,0))
-         check[cur[0]][cur[1] + 1] = 1
-      if cur[1] == 0:
-         if(arr[cur[0]][29] < 3 and check[cur[0]][29] == 0):
-            q.append((cur[0],29,1))
-            check[cur[0]][29] = 1
-      elif(arr[cur[0]][cur[1] - 1] < 3 and check[cur[0]][cur[1] - 1] == 0):
-         q.append((cur[0],cur[1] - 1,1))
-         check[cur[0]][cur[1] - 1] = 1
+        if(level[cur[0]][cur[1] + 1] < 3 and check[cur[0]][cur[1] + 1] == 0):
+            q.append((cur[0],cur[1] + 1,0))
+            check[cur[0]][cur[1] + 1] = 1
+
+        if(level[cur[0]][cur[1] - 1] < 3 and check[cur[0]][cur[1] - 1] == 0):
+            q.append((cur[0],cur[1] - 1,1))
+            check[cur[0]][cur[1] - 1] = 1
 
 
 class Ghost:
@@ -944,10 +942,10 @@ def get_targets(blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y):
 action = 1
 episode = 0
 run = True
-# q_table = np.zeros((4,2,2,2,2,2,2,2,2,2,4))
-q_table = np.load('sarsa.npy')
+q_table = np.zeros((4,2,2,2,2,2,2,2,2,2,4))
+# q_table = np.load('sarsa.npy')
 e = np.zeros((4,2,2,2,2,2,2,2,2,2,4))
-epsilon = np.load('sarsa_epsiolon.npy')
+# epsilon = np.load('sarsa_epsiolon.npy')
 # print(q_table)
 # print(epsilon)
 obs_state = (0,1,1,0,0,0,0,0,0,0)
@@ -1275,9 +1273,6 @@ while run:
                 game_over = False
                 game_won = False
 
-    
-
-
     if player_x > 900:
         player_x = -47
     elif player_x < -50:
@@ -1296,8 +1291,10 @@ while run:
         reward = 200
 
     count = 0
-    food_nearest = (bfs(player_x + 23,player_y + 24))
-    next_allowed = check_position(player_x+23,player_y+24);
+    if(level[aism_y][aism_x] == 0):
+        print(aism_y, aism_x)
+        aism_y, aism_x, food_nearest = (bfs(player_x + 23,player_y + 24))
+    next_allowed = check_position(player_x+23,player_y+24)
     
     ghost_right = 0
     ghost_left = 0
@@ -1346,15 +1343,15 @@ while run:
     else:
         next_action = np.argmax(q_table[next_state])
     if (obs_state != next_state or action != next_action):
-     Temp_diff = (reward + gamma*(q_table[next_state][next_action]))
-    # print(Temp_diff)
-     e[obs_state][action] += 1
-     q_table = q_table + np.dot((alpha*Temp_diff),e)
-     e = np.dot(lamda*gamma,e)
-   
-    # print(obs_state)
-     obs_state = next_state
-     action = next_action
+        Temp_diff = (reward + gamma*(q_table[next_state][next_action]))
+        # print(Temp_diff)
+        e[obs_state][action] += 1
+        q_table = q_table + np.dot((alpha*Temp_diff),e)
+        e = np.dot(lamda*gamma,e)
+    
+        # print(obs_state)
+        obs_state = next_state
+        action = next_action
     # print(reward,end = " ")
     # print(obs_state)
     
@@ -1362,6 +1359,11 @@ while run:
         if epsilon > epsilon_min:
             epsilon *= epsilon_decay
         print("The episode "+str(episode)+" is done")
+        data['score'].append(score)
+        data['episode'].append(episode)
+        df = pd.DataFrame(data)
+        df.to_csv('data\data.csv', index=False)
+        score = 0
         e = np.zeros((4,2,2,2,2,2,2,2,2,2,4))
     if episode % 2 == 0:
         np.save('sarsa.npy',q_table)
