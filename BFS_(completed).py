@@ -932,7 +932,7 @@ run = True
 
 
 
-
+count = 0
 while run:
     
     terminated = 0
@@ -946,13 +946,13 @@ while run:
         eaten_ghost = [False, False, False, False]
 
     moving = True
-
+    count += 1
     screen.fill('black')
     draw_board()
     center_x = player_x 
     center_y = player_y
-    num1 = (HEIGHT - 50) // 32
-    num2 = (WIDTH // 30)
+    num1 = ((HEIGHT - 50) // 32) 
+    num2 = ((WIDTH // 30)) 
     if powerup:
         ghost_speeds = [(num1,num2), (num1,num2), (num1,num2), (num1,num2)]
     else:
@@ -1131,6 +1131,7 @@ while run:
         score += (2 ** eaten_ghost.count(True)) * 100
     
     if  (game_over or game_won):
+                print(score)
                 draw_misc()
                 powerup = False
                 power_counter = 0
@@ -1159,6 +1160,7 @@ while run:
                 pinky_dead = False
                 score = 0
                 lives = 3
+                
                 level = copy.deepcopy(boards)
                 game_over = False
                 game_won = False
@@ -1166,9 +1168,9 @@ while run:
     
 
     if player_x > 900:
-        player_x = -47
-    elif player_x < -50:
-        player_x = 897
+        player_x = 15
+    elif player_x < 0:
+        player_x = 870
 
     if blinky.in_box and blinky_dead:
         blinky_dead = False
@@ -1178,29 +1180,6 @@ while run:
 
     num1 = (HEIGHT - 50) // 32
     num2 = WIDTH // 30
-    # current_state = (((player_y + 23) // num1,(player_x + 24) // num2),((blinky_y + 22) // num1,(blinky_x + 22) // num2),((pinky_y + 22) // num1,(pinky_x + 22) // num2))
-    # if current_state != prev_state :
-    #  food = (bfs(player_x + 23,player_y + 24))
-    #  ghost_right,ghost_left,ghost_up,ghost_down = check_ghost(blinky_x+22,blinky_y+22,pinky_x+22,pinky_y + 22,player_x + 23,player_y + 24)
-    #  turn_next = check_position(player_x + 23,player_y + 24)
-    #  if food == 0 and (ghost_right):
-    #     if turn_next[2] and not ghost_up: action = 2
-    #     elif turn_next[1] and not ghost_left: action = 1
-    #     elif turn_next[3] and not ghost_down: action = 3
-    #  elif food  == 1 and (ghost_left):
-    #     if turn_next[3] and not ghost_down : action = 3
-    #     elif turn_next[0] and not ghost_right : action = 0
-    #     elif turn_next[2] and not ghost_left : action = 2
-    #  elif food == 2 and (ghost_up):
-    #     if turn_next[1] and not ghost_left : action = 1 
-    #     elif turn_next[3] and not ghost_down : action = 3
-    #     elif turn_next[0] and not ghost_right : action = 0
-    #  elif food == 3 and (ghost_down):
-    #     if turn_next[0] and not ghost_right : action = 0
-    #     elif turn_next[2] and not ghost_up : action = 2
-    #     elif turn_next[1] and not ghost_left : action = 1 
-    #  else:
-    #     action = food
     turn_next = check_position(player_x,player_y)
     food = (bfs(player_x,player_y))
     ghost_right,ghost_left,ghost_up,ghost_down = check_ghost(blinky_x,blinky_y,pinky_x,pinky_y,player_x,player_y)
@@ -1223,23 +1202,13 @@ while run:
         elif turn_next[1] and not ghost_left : action = 1 
     else:
         action = food
-    
-    
-    # print(((blinky_y + 22) // num1,(blinky_x + 22) // num2),end = " ")
-    # # print(((pinky_y + 22) // num1,(pinky_x + 22) // num2),end = " ")
-    # print(food,end=" ")
-    # print(turn_next,end=" ")
-    # print(action)
-    # print(ghost_right,end = " ")
-    # print(ghost_left,end= " ")
-    # print(ghost_up,end= " ")
-    # print(ghost_down)
-    
     game_won = True
     for i in range(len(level)):
         if 1 in level[i] or 2 in level[i]:
             game_won = False
     if game_won == True:
+        print("The time for BFS is: ")
+        print(count)
         draw_misc()
     pygame.display.flip()
     
