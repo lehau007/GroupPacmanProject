@@ -1138,11 +1138,15 @@ while run:
                 reward = 200
                 game_over = False
                 game_won = False
-                print(score)
                 score_obtained.append(score)
                 time.append(count)
                 terminated = 1
-                print("WINNING at the episode"+str(episode))
+                print("WINNING at the episode "+str(episode))
+                print("The score achieved is: ")
+                print(score)
+                print("The number of time taken is: ")
+                print(count)
+                
 
     turn_next = check_position(player_x,player_y)
     
@@ -1224,7 +1228,7 @@ while run:
             moving = False
             startup_counter = 0
             obs_state = (0,1,1,0,0,0,0,0,0,1)
-            print("The episode "+str(episode)+" is done")
+            # print("The episode "+str(episode)+" is done")
        
     # if episode % 2 == 0:
     #     np.save('q_table.npy',q_table)
