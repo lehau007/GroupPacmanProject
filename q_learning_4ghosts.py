@@ -983,6 +983,8 @@ episode = 0
 run = True
 # q_table = np.zeros((4,2,2,2,2,2,2,2,2,50,4),np.float64)
 q_table = np.load('q_table.npy')
+count = 0
+time = []
 # epsilon = np.load('epsilon.npy')
 obs_state = (0,1,1,0,0,0,0,0,0,1)
 num_of_wining = 0
@@ -999,7 +1001,7 @@ while run:
         powerup = False
         eaten_ghost = [False, False, False, False]
     moving = True
-
+    count += 1
     screen.fill('black')
     draw_board()
     center_x = player_x 
@@ -1138,6 +1140,7 @@ while run:
                 game_won = False
                 print(score)
                 score_obtained.append(score)
+                time.append(count)
                 terminated = 1
                 print("WINNING at the episode"+str(episode))
 
@@ -1202,6 +1205,7 @@ while run:
             direction = 0
             direction_command = 0
             score = 0
+            count = 0
             blinky_x = 75
             blinky_y = 70
             blinky_direction = 0
@@ -1224,10 +1228,12 @@ while run:
        
     # if episode % 2 == 0:
     #     np.save('q_table.npy',q_table)
-    if episode == 20: 
+    if episode == 50: 
         run = False
         print("number of winnings is: ")
         print(num_of_wining)
+        print(time)
+        print(score_obtained)
     # print(food,end= " ")
     # print(action,end= " ")
     # print(ghost_right,end = " ")
