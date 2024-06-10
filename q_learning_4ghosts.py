@@ -1238,12 +1238,9 @@ while run:
         print(num_of_wining)
         print(time)
         print(score_obtained)
-    # print(food,end= " ")
-    # print(action,end= " ")
-    # print(ghost_right,end = " ")
-    # print(ghost_left,end= " ")
-    # print(ghost_up,end= " ")
-    # print(ghost_down)
+        print("The minimum time taken is:")
+        print(str(np.min(time))+"at the #"+str(np.argmin(time) + 1)+" WINNING")
+ 
 
     
 
